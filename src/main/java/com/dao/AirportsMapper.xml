@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dao.AirportsMapper">
+    <resultMap id="result_Airports_Map" type="com.entity.Airports">
+        <id column="Airports0" property="id" />
+        <result column="Airports1" property="airportName" />
+        <result column="Airports2" property="cityName" />
+    </resultMap>
+
+    <sql id="Assist">
+        <where>
+            <foreach collection="require" item="req" separator=" ">
+                ${req.require} #{req.value}
+            </foreach>
+        </where>
+    </sql>
+
+    <sql id="updateAssist">
+        <where>
+            <foreach collection="assist.require" item="req" separator=" ">
+                ${req.require} #{req.value}
+            </foreach>
+        </where>
+    </sql>
+
+    <sql id="AIRPORTS_Column">
+        AIRPORTS.ID as Airports0
+        ,AIRPORTS.AIRPORT_NAME as Airports1
+        ,AIRPORTS.CITY_NAME as Airports2
+    </sql>
+
+    <select id="getAirportsRowCount" parameterType="com.common.Assist" resultType="java.lang.Long">
+        select count(ID) from AIRPORTS
+        <if test="require!=null"><include refid="Assist" /></if>
+    </select>
+    <select id="selectAirports" parameterType="com.common.Assist" resultMap="result_Airports_Map">
+        select * from
+        (
+            select  rownum as page,result.* from
+            (
+                select  <if test="distinct !=null">${distinct}</if>
+                <choose>
+            	       <when test="resultColumn!=null">${resultColumn}</when>
+            	       <otherwise>
+                <include refid="AIRPORTS_Column" /> 
+            	       </otherwise>
+                </choose>
+                from AIRPORTS 
+
+                <if test="require!=null"><include refid="Assist" /></if>
+                <if test="order !=null">${order}</if>
+            ) result 
+            <if test="rowSize!=null">where rownum &lt;= <if test="startRow!=null">#{startRow}+</if>#{rowSize}</if>
+        )
+        <if test="startRow!=null">where page &gt; #{startRow} </if>
+    </select> 
+
+    <select id="selectAirportsById" parameterType="java.lang.Integer" resultMap="result_Airports_Map">
+        select 
+            <include refid="AIRPORTS_Column" /> 
+        from AIRPORTS
+        where AIRPORTS.ID = #{id}
+    </select> 
+
+
+    <insert id="insertAirports" parameterType="com.entity.Airports" useGeneratedKeys="true" keyProperty="id">
+    	<selectKey resultType="Integer" order="BEFORE" keyProperty="id"> 
+    		SELECT SEQ_airport_ID.NEXTVAL FROM dual 
+    	</selectKey>
+        insert into AIRPORTS(ID,AIRPORT_NAME,CITY_NAME) 
+        values(#{id},#{airportName},#{cityName})
+    </insert>
+
+    <insert id="insertNonEmptyAirports" parameterType="com.entity.Airports" useGeneratedKeys="true" keyProperty="id">
+        <selectKey resultType="Integer" order="BEFORE" keyProperty="id"> 
+    		SELECT SEQ_airport_ID.NEXTVAL FROM dual 
+    	</selectKey>
+        insert into AIRPORTS
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="airportName != null">AIRPORT_NAME,</if>
+            <if test="cityName != null">CITY_NAME,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null"> #{id},</if>
+            <if test="airportName != null"> #{airportName},</if>
+            <if test="cityName != null"> #{cityName},</if>
+        </trim>
+    </insert>
+
+    <delete id="deleteAirportsById" parameterType="java.lang.Integer">
+        delete from AIRPORTS
+        where ID = #{id}
+    </delete>
+
+    <delete id="deleteAirports" parameterType="com.common.Assist">
+        delete from AIRPORTS
+        <if test="require!=null"><include refid="Assist" /></if>
+    </delete>
+
+    <update id="updateAirportsById" parameterType="com.entity.Airports">
+        update AIRPORTS set
+            AIRPORT_NAME=#{airportName}
+            ,CITY_NAME=#{cityName}
+        where ID=#{id}
+    </update>
+
+    <update id="updateNonEmptyAirportsById" parameterType="com.entity.Airports">
+        update AIRPORTS
+        <set>
+            <if test="airportName != null">
+                AIRPORT_NAME=#{airportName},
+            </if>
+            <if test="cityName != null">
+                CITY_NAME=#{cityName},
+            </if>
+        </set>
+        where ID=#{id}
+    </update>
+
+    <update id="updateAirports" parameterType="map">
+        update AIRPORTS
+        <set>
+                ID=#{enti.id},
+                AIRPORT_NAME=#{enti.airportName},
+                CITY_NAME=#{enti.cityName},
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <update id="updateNonEmptyAirports" parameterType="map">
+        update AIRPORTS
+        <set>
+            <if test="enti.id != null">
+                ID=#{enti.id},
+            </if>
+            <if test="enti.airportName != null">
+                AIRPORT_NAME=#{enti.airportName},
+            </if>
+            <if test="enti.cityName != null">
+                CITY_NAME=#{enti.cityName},
+            </if>
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+</mapper>

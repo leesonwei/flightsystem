@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dao.FlightTicketsMapper">
+    <resultMap id="result_FlightTickets_Map" type="com.entity.FlightTickets">
+        <id column="FlightTickets0" property="id" />
+        <result column="FlightTickets1" property="flightId" />
+        <result column="FlightTickets2" property="flightDate" />
+        <result column="FlightTickets3" property="ticketPrice" />
+        <result column="FlightTickets4" property="sellCompany" />
+    </resultMap>
+
+    <sql id="Assist">
+        <where>
+            <foreach collection="require" item="req" separator=" ">
+                ${req.require} #{req.value}
+            </foreach>
+        </where>
+    </sql>
+
+    <sql id="updateAssist">
+        <where>
+            <foreach collection="assist.require" item="req" separator=" ">
+                ${req.require} #{req.value}
+            </foreach>
+        </where>
+    </sql>
+
+    <sql id="FLIGHT_TICKETS_Column">
+        FLIGHT_TICKETS.ID as FlightTickets0
+        ,FLIGHT_TICKETS.FLIGHT_ID as FlightTickets1
+        ,FLIGHT_TICKETS.FLIGHT_DATE as FlightTickets2
+        ,FLIGHT_TICKETS.TICKET_PRICE as FlightTickets3
+        ,FLIGHT_TICKETS.SELL_COMPANY as FlightTickets4
+    </sql>
+
+    <select id="getFlightTicketsRowCount" parameterType="com.common.Assist" resultType="java.lang.Long">
+        select count(ID) from FLIGHT_TICKETS
+        <if test="require!=null"><include refid="Assist" /></if>
+    </select>
+    <select id="selectFlightTickets" parameterType="com.common.Assist" resultMap="result_FlightTickets_Map">
+        select * from
+        (
+            select  rownum as page,result.* from
+            (
+                select  <if test="distinct !=null">${distinct}</if>
+                <choose>
+            	       <when test="resultColumn!=null">${resultColumn}</when>
+            	       <otherwise>
+                <include refid="FLIGHT_TICKETS_Column" /> 
+            	       </otherwise>
+                </choose>
+                from FLIGHT_TICKETS 
+
+                <if test="require!=null"><include refid="Assist" /></if>
+                <if test="order !=null">${order}</if>
+            ) result 
+            <if test="rowSize!=null">where rownum &lt;= <if test="startRow!=null">#{startRow}+</if>#{rowSize}</if>
+        )
+        <if test="startRow!=null">where page &gt; #{startRow} </if>
+    </select> 
+
+    <select id="selectFlightTicketsById" parameterType="java.lang.Integer" resultMap="result_FlightTickets_Map">
+        select 
+            <include refid="FLIGHT_TICKETS_Column" /> 
+        from FLIGHT_TICKETS
+        where FLIGHT_TICKETS.ID = #{id}
+    </select> 
+
+
+    <insert id="insertFlightTickets" parameterType="com.entity.FlightTickets" useGeneratedKeys="true" keyProperty="id">
+        <selectKey resultType="Integer" order="BEFORE" keyProperty="id"> 
+    		SELECT SEQ_ftickets_ID.NEXTVAL FROM dual 
+    	</selectKey>
+        insert into FLIGHT_TICKETS(ID,FLIGHT_ID,FLIGHT_DATE,TICKET_PRICE,SELL_COMPANY) 
+        values(#{id},#{flightId},#{flightDate},#{ticketPrice},#{sellCompany})
+    </insert>
+
+    <insert id="insertNonEmptyFlightTickets" parameterType="com.entity.FlightTickets" useGeneratedKeys="true" keyProperty="id">
+        <selectKey resultType="Integer" order="BEFORE" keyProperty="id"> 
+    		SELECT SEQ_ftickets_ID.NEXTVAL FROM dual 
+    	</selectKey>
+        insert into FLIGHT_TICKETS
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="flightId != null">FLIGHT_ID,</if>
+            <if test="flightDate != null">FLIGHT_DATE,</if>
+            <if test="ticketPrice != null">TICKET_PRICE,</if>
+            <if test="sellCompany != null">SELL_COMPANY,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null"> #{id},</if>
+            <if test="flightId != null"> #{flightId},</if>
+            <if test="flightDate != null"> #{flightDate},</if>
+            <if test="ticketPrice != null"> #{ticketPrice},</if>
+            <if test="sellCompany != null"> #{sellCompany},</if>
+        </trim>
+    </insert>
+
+    <delete id="deleteFlightTicketsById" parameterType="java.lang.Integer">
+        delete from FLIGHT_TICKETS
+        where ID = #{id}
+    </delete>
+
+    <delete id="deleteFlightTickets" parameterType="com.common.Assist">
+        delete from FLIGHT_TICKETS
+        <if test="require!=null"><include refid="Assist" /></if>
+    </delete>
+
+    <update id="updateFlightTicketsById" parameterType="com.entity.FlightTickets">
+        update FLIGHT_TICKETS set
+            FLIGHT_ID=#{flightId}
+            ,FLIGHT_DATE=#{flightDate}
+            ,TICKET_PRICE=#{ticketPrice}
+            ,SELL_COMPANY=#{sellCompany}
+        where ID=#{id}
+    </update>
+
+    <update id="updateNonEmptyFlightTicketsById" parameterType="com.entity.FlightTickets">
+        update FLIGHT_TICKETS
+        <set>
+            <if test="flightId != null">
+                FLIGHT_ID=#{flightId},
+            </if>
+            <if test="flightDate != null">
+                FLIGHT_DATE=#{flightDate},
+            </if>
+            <if test="ticketPrice != null">
+                TICKET_PRICE=#{ticketPrice},
+            </if>
+            <if test="sellCompany != null">
+                SELL_COMPANY=#{sellCompany},
+            </if>
+        </set>
+        where ID=#{id}
+    </update>
+
+    <update id="updateFlightTickets" parameterType="map">
+        update FLIGHT_TICKETS
+        <set>
+                ID=#{enti.id},
+                FLIGHT_ID=#{enti.flightId},
+                FLIGHT_DATE=#{enti.flightDate},
+                TICKET_PRICE=#{enti.ticketPrice},
+                SELL_COMPANY=#{enti.sellCompany},
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <update id="updateNonEmptyFlightTickets" parameterType="map">
+        update FLIGHT_TICKETS
+        <set>
+            <if test="enti.id != null">
+                ID=#{enti.id},
+            </if>
+            <if test="enti.flightId != null">
+                FLIGHT_ID=#{enti.flightId},
+            </if>
+            <if test="enti.flightDate != null">
+                FLIGHT_DATE=#{enti.flightDate},
+            </if>
+            <if test="enti.ticketPrice != null">
+                TICKET_PRICE=#{enti.ticketPrice},
+            </if>
+            <if test="enti.sellCompany != null">
+                SELL_COMPANY=#{enti.sellCompany},
+            </if>
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+</mapper>

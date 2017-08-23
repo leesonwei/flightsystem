@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dao.FlightsMapper">
+    <resultMap id="result_Flights_Map" type="com.entity.Flights">
+        <id column="Flights0" property="id" />
+        <result column="Flights1" property="flightCode" />
+        <result column="Flights2" property="flightDate" />
+        <result column="Flights3" property="airline" />
+        <result column="Flights4" property="type" />
+        <result column="Flights5" property="takeAirportId" />
+        <result column="Flights6" property="landingAirportId" />
+        <result column="Flights7" property="takeTime" />
+        <result column="Flights8" property="landingTime" />
+        <result column="Flights9" property="flightTime" />
+        <result column="Flights10" property="stopAirport" />
+        <result column="Flights11" property="referencePrice" />
+    </resultMap>
+
+    <sql id="Assist">
+        <where>
+            <foreach collection="require" item="req" separator=" ">
+                ${req.require} #{req.value}
+            </foreach>
+        </where>
+    </sql>
+
+    <sql id="updateAssist">
+        <where>
+            <foreach collection="assist.require" item="req" separator=" ">
+                ${req.require} #{req.value}
+            </foreach>
+        </where>
+    </sql>
+
+    <sql id="FLIGHTS_Column">
+        FLIGHTS.ID as Flights0
+        ,FLIGHTS.FLIGHT_CODE as Flights1
+        ,FLIGHTS.FLIGHT_DATE as Flights2
+        ,FLIGHTS.AIRLINE as Flights3
+        ,FLIGHTS.TYPE as Flights4
+        ,FLIGHTS.TAKE_AIRPORT_ID as Flights5
+        ,FLIGHTS.LANDING_AIRPORT_ID as Flights6
+        ,FLIGHTS.TAKE_TIME as Flights7
+        ,FLIGHTS.LANDING_TIME as Flights8
+        ,FLIGHTS.FLIGHT_TIME as Flights9
+        ,FLIGHTS.STOP_AIRPORT as Flights10
+        ,FLIGHTS.REFERENCE_PRICE as Flights11
+    </sql>
+
+    <select id="getFlightsRowCount" parameterType="com.common.Assist" resultType="java.lang.Long">
+        select count(ID) from FLIGHTS
+        <if test="require!=null"><include refid="Assist" /></if>
+    </select>
+    <select id="selectFlights" parameterType="com.common.Assist" resultMap="result_Flights_Map">
+        select * from
+        (
+            select  rownum as page,result.* from
+            (
+                select  <if test="distinct !=null">${distinct}</if>
+                <choose>
+            	       <when test="resultColumn!=null">${resultColumn}</when>
+            	       <otherwise>
+                <include refid="FLIGHTS_Column" /> 
+            	       </otherwise>
+                </choose>
+                from FLIGHTS 
+
+                <if test="require!=null"><include refid="Assist" /></if>
+                <if test="order !=null">${order}</if>
+            ) result 
+            <if test="rowSize!=null">where rownum &lt;= <if test="startRow!=null">#{startRow}+</if>#{rowSize}</if>
+        )
+        <if test="startRow!=null">where page &gt; #{startRow} </if>
+    </select> 
+    
+    <select id="selectFlightsAllInfo" parameterType="com.entity.Flights" resultMap="result_Flights_Map">
+         select  
+            <include refid="FLIGHTS_Column" /> 
+         from FLIGHTS
+         <where>
+         	<if test="flightDate!=null">flight_Date = #{flightDate}</if>
+         	<if test="takeAirportId!=null">and take_Airport_Id = #{takeAirportId}</if>
+         	<if test="landingAirportId!=null">and landing_Airport_Id = #{landingAirportId}</if>
+         </where> 
+    </select> 
+
+    <select id="selectFlightsById" parameterType="java.lang.Integer" resultMap="result_Flights_Map">
+        select 
+            <include refid="FLIGHTS_Column" /> 
+        from FLIGHTS
+        where FLIGHTS.ID = #{id}
+    </select> 
+
+
+    <insert id="insertFlights" parameterType="com.entity.Flights" useGeneratedKeys="true" keyProperty="id">
+    	<selectKey resultType="Integer" order="BEFORE" keyProperty="id"> 
+    		SELECT SEQ_flights_ID.NEXTVAL FROM dual 
+    	</selectKey>
+        insert into FLIGHTS(ID,FLIGHT_CODE,FLIGHT_DATE,AIRLINE,TYPE,TAKE_AIRPORT_ID,LANDING_AIRPORT_ID,TAKE_TIME,LANDING_TIME,FLIGHT_TIME,STOP_AIRPORT,REFERENCE_PRICE) 
+        values(#{id},#{flightCode},#{flightDate},#{airline},#{type},#{takeAirportId},#{landingAirportId},#{takeTime},#{landingTime},#{flightTime},#{stopAirport},#{referencePrice})
+    </insert>
+
+    <insert id="insertNonEmptyFlights" parameterType="com.entity.Flights" useGeneratedKeys="true" keyProperty="id">
+        <selectKey resultType="Integer" order="BEFORE" keyProperty="id"> 
+    		SELECT SEQ_flights_ID.NEXTVAL FROM dual 
+    	</selectKey>
+        insert into FLIGHTS
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">ID,</if>
+            <if test="flightCode != null">FLIGHT_CODE,</if>
+            <if test="flightDate != null">FLIGHT_DATE,</if>
+            <if test="airline != null">AIRLINE,</if>
+            <if test="type != null">TYPE,</if>
+            <if test="takeAirportId != null">TAKE_AIRPORT_ID,</if>
+            <if test="landingAirportId != null">LANDING_AIRPORT_ID,</if>
+            <if test="takeTime != null">TAKE_TIME,</if>
+            <if test="landingTime != null">LANDING_TIME,</if>
+            <if test="flightTime != null">FLIGHT_TIME,</if>
+            <if test="stopAirport != null">STOP_AIRPORT,</if>
+            <if test="referencePrice != null">REFERENCE_PRICE,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null"> #{id},</if>
+            <if test="flightCode != null"> #{flightCode},</if>
+            <if test="flightDate != null"> #{flightDate},</if>
+            <if test="airline != null"> #{airline},</if>
+            <if test="type != null"> #{type},</if>
+            <if test="takeAirportId != null"> #{takeAirportId},</if>
+            <if test="landingAirportId != null"> #{landingAirportId},</if>
+            <if test="takeTime != null"> #{takeTime},</if>
+            <if test="landingTime != null"> #{landingTime},</if>
+            <if test="flightTime != null"> #{flightTime},</if>
+            <if test="stopAirport != null"> #{stopAirport},</if>
+            <if test="referencePrice != null"> #{referencePrice},</if>
+        </trim>
+    </insert>
+
+    <delete id="deleteFlightsById" parameterType="java.lang.Integer">
+        delete from FLIGHTS
+        where ID = #{id}
+    </delete>
+
+    <delete id="deleteFlights" parameterType="com.common.Assist">
+        delete from FLIGHTS
+        <if test="require!=null"><include refid="Assist" /></if>
+    </delete>
+
+    <update id="updateFlightsById" parameterType="com.entity.Flights">
+        update FLIGHTS set
+            FLIGHT_CODE=#{flightCode}
+            ,FLIGHT_DATE=#{flightDate}
+            ,AIRLINE=#{airline}
+            ,TYPE=#{type}
+            ,TAKE_AIRPORT_ID=#{takeAirportId}
+            ,LANDING_AIRPORT_ID=#{landingAirportId}
+            ,TAKE_TIME=#{takeTime}
+            ,LANDING_TIME=#{landingTime}
+            ,FLIGHT_TIME=#{flightTime}
+            ,STOP_AIRPORT=#{stopAirport}
+            ,REFERENCE_PRICE=#{referencePrice}
+        where ID=#{id}
+    </update>
+
+    <update id="updateNonEmptyFlightsById" parameterType="com.entity.Flights">
+        update FLIGHTS
+        <set>
+            <if test="flightCode != null">
+                FLIGHT_CODE=#{flightCode},
+            </if>
+            <if test="flightDate != null">
+                FLIGHT_DATE=#{flightDate},
+            </if>
+            <if test="airline != null">
+                AIRLINE=#{airline},
+            </if>
+            <if test="type != null">
+                TYPE=#{type},
+            </if>
+            <if test="takeAirportId != null">
+                TAKE_AIRPORT_ID=#{takeAirportId},
+            </if>
+            <if test="landingAirportId != null">
+                LANDING_AIRPORT_ID=#{landingAirportId},
+            </if>
+            <if test="takeTime != null">
+                TAKE_TIME=#{takeTime},
+            </if>
+            <if test="landingTime != null">
+                LANDING_TIME=#{landingTime},
+            </if>
+            <if test="flightTime != null">
+                FLIGHT_TIME=#{flightTime},
+            </if>
+            <if test="stopAirport != null">
+                STOP_AIRPORT=#{stopAirport},
+            </if>
+            <if test="referencePrice != null">
+                REFERENCE_PRICE=#{referencePrice},
+            </if>
+        </set>
+        where ID=#{id}
+    </update>
+
+    <update id="updateFlights" parameterType="map">
+        update FLIGHTS
+        <set>
+                ID=#{enti.id},
+                FLIGHT_CODE=#{enti.flightCode},
+                FLIGHT_DATE=#{enti.flightDate},
+                AIRLINE=#{enti.airline},
+                TYPE=#{enti.type},
+                TAKE_AIRPORT_ID=#{enti.takeAirportId},
+                LANDING_AIRPORT_ID=#{enti.landingAirportId},
+                TAKE_TIME=#{enti.takeTime},
+                LANDING_TIME=#{enti.landingTime},
+                FLIGHT_TIME=#{enti.flightTime},
+                STOP_AIRPORT=#{enti.stopAirport},
+                REFERENCE_PRICE=#{enti.referencePrice},
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+    <update id="updateNonEmptyFlights" parameterType="map">
+        update FLIGHTS
+        <set>
+            <if test="enti.id != null">
+                ID=#{enti.id},
+            </if>
+            <if test="enti.flightCode != null">
+                FLIGHT_CODE=#{enti.flightCode},
+            </if>
+            <if test="enti.flightDate != null">
+                FLIGHT_DATE=#{enti.flightDate},
+            </if>
+            <if test="enti.airline != null">
+                AIRLINE=#{enti.airline},
+            </if>
+            <if test="enti.type != null">
+                TYPE=#{enti.type},
+            </if>
+            <if test="enti.takeAirportId != null">
+                TAKE_AIRPORT_ID=#{enti.takeAirportId},
+            </if>
+            <if test="enti.landingAirportId != null">
+                LANDING_AIRPORT_ID=#{enti.landingAirportId},
+            </if>
+            <if test="enti.takeTime != null">
+                TAKE_TIME=#{enti.takeTime},
+            </if>
+            <if test="enti.landingTime != null">
+                LANDING_TIME=#{enti.landingTime},
+            </if>
+            <if test="enti.flightTime != null">
+                FLIGHT_TIME=#{enti.flightTime},
+            </if>
+            <if test="enti.stopAirport != null">
+                STOP_AIRPORT=#{enti.stopAirport},
+            </if>
+            <if test="enti.referencePrice != null">
+                REFERENCE_PRICE=#{enti.referencePrice},
+            </if>
+        </set>
+        <if test="assist.require!=null"><include refid="updateAssist" /></if>
+    </update>
+
+</mapper>
